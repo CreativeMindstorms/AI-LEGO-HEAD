@@ -40,6 +40,7 @@ The project includes multiple features that work simultaneously.
 - Camera (e.g., phone with DroidCam or a webcam)
 - Microphone
 - Speaker
+- Tested on a Windows 10 operating system.
 
 ### Optional Requirements
 - Lego Robot containing two LEGO Mindstorms EV3 kits
