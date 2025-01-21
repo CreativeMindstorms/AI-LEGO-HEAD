@@ -84,6 +84,8 @@ The robot (which is optional for running this code) uses two Mindstorms EV3 Bric
 | C    | Jaw motor, controlling the up and down movement of the jaw. The motor stalls at its limits, which is also the available range for movement. |
 | D    | Mouth motor, controlling the up and dowm movement of the corners of the mouth using predefined positions. |
 
+If you choose to run the code with use_Mindstorms set to false, it will function just fine, but just not send the ev3 commands.
+
 ## License
 This project is licensed under the [GPLv3 License](LICENSE). Contributions and modifications are welcome, but they must remain open-source and credit the original author.
 
