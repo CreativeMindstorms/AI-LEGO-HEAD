@@ -1,0 +1,98 @@
+########## config.json: ##########
+
+continue_conversation:      Loads the previous conversation or starts a new one
+use_custom_information:     Whether it should be able to call the retrieve_personal_information function
+use_external_camera:        Whether it uses a webcam or external phone.
+use_external_microphone:    Allows you to switch between two microphones (for example: one for testing purposes and one for inside of the robot)
+use_Mindstorms:             Whether to connect to the physical Lego Robotic Head or run solely on the pc
+
+verbose_level:              The amount it should print. (0 is nothing, 1 is basic interaction, function calls by Gemini and errors, 2 is full debugging)
+
+random_eyes_interval:       A scale factor (integer) for the amount of time on average between looking at a new random position, if no faces or hands are detected (The lower, the more often, but 0 is never)
+
+external_camera_name:       Name of the camera device used when use_external_camera = true (Use verbose_level = 2 to see the available cameras)
+internal_camera_name:       Name of the camera device used when use_external_camera = false (Use verbose_level = 2 to see the available cameras)
+virtual_audio_device:       Name of the virtual audio cable that records output and can play it through an input (Run listAudioDevices.py to find its name)
+                            // Unfortunately, you will have to manuall select this device as the default output device in your system settings before running the code
+external_microphone_name:   One name of a physical microphone that you want to use to do speech recognition and keyword detection. (Run listAudioDevices.py to find its name)
+internal_microphone_name:   Other name of another physical microphone that you might want to use to do speech recognition and keyword detection. (Run listAudioDevices.py to find its name)
+
+display_window_scale_factor:The size of the window that shows the vision of the AI bot
+display_monitor_idx:        The index of the monitor to display the window on. Use verbose_level = 2 to see the monitors.
+window_name:                The name of the window that shows the video feed.
+show_fps:                   Whether to show the frames per second on the window or not. (This is different from the amount it can track per second)
+
+mirror_hands:               Whether or not to flip the hand detection. This is needed when the right and left hands are mixed up.
+
+gemini_api_key:             Your API key for Google Developers (Get yours at https://aistudio.google.com/)
+gemini_model:               The model to use for the Large Language Model and vision
+
+pico_api_key:               Your API key for PicoVoice (Get yours at https://console.picovoice.ai/)
+pico_keyword_path_hey_dave: (Relative to main.py) path to the trained picovoice model for keyword detection of "Hey Dave"
+pico_keyword_path_stop_now: (Relative to main.py) path to the trained picovoice model for keyword detection of "Stop now"
+pico_keywords:              The keywords that are defined above, but in their short form. (ordered lowercase)
+
+non_speaking_duration:      The amount of time in seconds of silence that indicates the user has not started speaking at all and make the robot stop listening.
+end_speaking_duration:      The amount of time in seconds of silence that indicates the user is done speaking.
+
+voice_id:                   The index of the voice for text to speech. Set verbose_level to 2 to see them listed. You can add more voices to pyttsx3 by downloading them in your windows settings
+play_inaudible_tone:        Whether it should play a very low (inaudible to the human ear) tone before text to speech. This prevents audio cutoff for bluetooth speakers that go into standby mode and need to be woken up.
+inaudible_tone_duration:    The duration in seconds of the inaudible tone. This means that the speaking is also delayed by this amount.
+
+weather_api_key:            Your API key for OpenWeather (Get yours at https://openweathermap.org/api)
+weather_city_id:            The location to check the weather (Find out at https://openweathermap.org/find)
+
+haar_face_path:             (Relative to main.py) input path to the .xml file that contains a haar object detection model for faces
+face_encodings_path:        (Relative to main.py) input path to the .txt file that contains recognized face encodings
+memory_path:                (Relative to main.py) in- and output path to the .json file that contains the recent memory
+
+face_names:                 Ordered list of names of the faces in the ordered face_encodings_file
+face_paths:                 List of (Relative to main.py) input paths to the unique image files that contain singular faces
+                            // Only used when training new faces (createFaceEncodings.py)
+
+RPS_location:               Folder that contains images paper.jpg, rock.jpg and scissors.jpg for Rock Paper Scissors code
+
+safety_settings:            Settings for the Gemini model to prevent it from censoring and giving errors.
+
+
+########## ev3_config.json: ##########
+
+EV3_SIGHT_ADDRESS:          Bluetooth address of the EV3 that controls the eyes, eyebrows and neck
+EV3_MOUTH_ADDRESS:          Bluetooth address of the EV3 that controls the mouth
+
+motor_tolerance:            A tolerance in degrees on the motors that makes sure the motors only move when they aren't at their target destination (within a tolerance).
+                            // This prevents motors from spinning indefinitely if they were at the destination but attempt to move anyway
+
+relative_listening_position:The relative position of the eyebrows when the bot is actively listening
+
+jaw_direction:              Can be used to flip the direction that the jaw motor moves (1 or -1)
+jaw_close_time:             The amount of time in seconds that it takes to close the jaw
+jaw_sound_threshold:        The threshold of the sound level above which the jaw opens and beneath which the jaw closes
+
+eye_vertical_amplitude:     The positive amount in degrees the motor for the horizontal movement can move up (from the center).
+eye_horizontal_amplitude:   The positive amount in degrees the motor for the horizontal movement can move to one side (from the center).
+neck_amplitude:             The positive amount in degrees the motor for the neck movement can move to one side (from the center).
+neck_eye_diff:              The ratio between the horizontal eye motor and neck motor, in terms of angle. For every 1 rotation that the eye motor does, the neck motor does neck_eye_diff rotations
+
+cam_fov:                    The field of view in degrees of the physical camera
+cam_angle:                  The angle in degrees of the physical camera (0 is facing completely forward and any positive angle is leaning backwards)
+cam_eye_height_diff:        Some relative distance between the phsycial camera and the eyes. Makes the robot look down more when the face is closer by. Used in the formula face_y = face_y - face_height * cam_eye_height_diff
+
+eyebrow_range:              motor positions when eyebrows up or down
+mouth_range:                motor positions when corners of the mouth are high or low
+
+speed:                      The motor speeds for every motor. (from 0 to 100)
+
+emotions:                   emotion_name: {mouth_multiplier, eyebrow_multiplier} (emotion_name consists of only lowercase letters)
+                            // All from -1.0 to 1.0 relative positions of the corners of the mouth and the eyebrows
+                            // mouth_multiplier:     1 = highest,    0 = neutral,    -1 = lowest
+                            // eyebrow_multiplier:   1 = highest,    0 = neutral,    -1 = lowest
+
+########## prompt.txt: ##########
+
+This file contains the behaviour of the AI Assistant.
+[emotions] will be automatically replaced by all of the possible emotions as defined in the ev3_config file.
+
+########## vision_prompt.txt: ##########
+
+This file contains the behaviour of the AI responsible for vision capability (besides face recognition)

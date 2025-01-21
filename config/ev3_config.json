@@ -1,0 +1,77 @@
+{
+    "EV3_SIGHT_ADDRESS": "00:00:00:00:00:00",
+    "EV3_MOUTH_ADDRESS": "00:00:00:00:00:00",
+
+    "motor_tolerance": 3,
+
+    "relative_listening_position": 0.3,
+
+    "jaw_direction": -1,
+    "jaw_close_time": 0.5,
+    "jaw_sound_threshold": 35,
+
+    "eye_vertical_amplitude": 75,
+    "eye_horizontal_amplitude": 20,
+    "neck_amplitude": 90,
+    "neck_eye_diff": 3.0,
+
+    "cam_fov": 77,
+    "cam_angle": 22,
+    "cam_eye_height_diff": 2.0,
+
+    "eyebrow_range": {
+        "high": 120,
+        "low": -100
+    },
+    "mouth_range": {
+        "high": 0,
+        "low": 400
+    },
+
+    "speed": {
+        "eye_vertical": 50,
+        "eye_vertical_calibrate": 35,
+        "eye_horizontal": 20,
+        "eye_horizontal_calibrate": 25,
+        "neck": 30,
+        "eyebrow": 30,
+        "mouth": 100,
+        "jaw_talk": 100,
+        "jaw_close": 50
+    },
+
+    "emotions": {
+        "happy": {
+            "mouth_multiplier": 0,
+            "eyebrow_multiplier": 0.35
+        },
+        "surprised": {
+            "mouth_multiplier": -0.25,
+            "eyebrow_multiplier": 0.35
+        },
+        "angry": {
+            "mouth_multiplier": -1,
+            "eyebrow_multiplier": 1
+        },
+        "sarcastic": {
+            "mouth_multiplier": -0.25,
+            "eyebrow_multiplier": -0.25
+        },
+        "scared": {
+            "mouth_multiplier": -0.75,
+            "eyebrow_multiplier": -1
+        },
+        "neutral": {
+            "mouth_multiplier": -0.5,
+            "eyebrow_multiplier": 0
+        },
+        "laughing": {
+            "mouth_multiplier": 0,
+            "eyebrow_multiplier": 0.35
+        },
+        "sad": {
+            "mouth_multiplier": -1,
+            "eyebrow_multiplier": -1
+        }
+    }
+}

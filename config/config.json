@@ -1,0 +1,73 @@
+{
+    "continue_conversation": false,
+    "use_external_camera": false,
+    "use_external_microphone": false,
+    "use_Mindstorms": true,
+
+    "verbose_level": 1,
+
+    "random_eyes_interval": 200,
+
+    "external_camera_name": "DroidCam Source 3",
+    "internal_camera_name": "HD Webcam",
+    "virtual_audio_device": "Line 1 (Virtual Audio Cable), MME",
+    "external_microphone_name": "Microfoon (USB PnP Audio Device",
+    "internal_microphone_name": "Microfoon (Realtek(R) Audio)",
+
+    "display_window_scale_factor": 1.0,
+    "display_monitor_idx": 1,
+    "window_name": "Dave's vision",
+    "show_fps": true,
+
+    "mirror_hands": true,
+
+    "gemini_api_key": "YOUR KEY",
+    "gemini_model": "gemini-2.0-flash-exp",
+
+    "pico_api_key": "YOUR KEY",
+    "pico_keyword_path_hey_dave": "externalFiles/hey-Dave_en_windows_v3_0_0.ppn",
+    "pico_keywords": [
+        "hey dave"
+    ],
+    "non_speaking_duration": 5.0,
+    "end_speaking_duration": 1.0,
+
+    "voice_id": 1,
+    "play_inaudible_tone": false,
+    "inaudible_tone_duration": 1,
+
+    "weather_api_key": "YOUR KEY",
+    "weather_city_id": "YOUR CITY ID",
+
+    "haar_face_path": "externalFiles/haar_face.xml",
+    "face_encodings_path": "externalFiles/face_encodings.txt",
+    "memory_path": "externalFiles/memory.pkl",
+
+    "face_names": [
+        "Name Surname (maybe very short information)"
+    ],
+    "face_paths": [
+        "faces/example.png"
+    ],
+
+    "RPS_location": "externalFiles",
+
+    "safety_settings": [
+        {
+            "category": "HARM_CATEGORY_HARASSMENT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_HATE_SPEECH",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE"
+        }
+    ]
+}
