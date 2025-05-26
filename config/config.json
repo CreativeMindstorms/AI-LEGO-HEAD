@@ -22,7 +22,7 @@
     "mirror_hands": true,
 
     "gemini_api_key": "YOUR KEY",
-    "gemini_model": "gemini-2.0-flash",
+    "gemini_model": "gemini-2.5-flash-preview-05-20",
 
     "pico_api_key": "YOUR KEY",
     "pico_keyword_path_hey_dave": "externalFiles/hey-Dave_en_windows_v3_0_0.ppn",
@@ -67,6 +67,10 @@
         },
         {
             "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_CIVIC_INTEGRITY",
             "threshold": "BLOCK_NONE"
         }
     ]
