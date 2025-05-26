@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from random import choice
 from typing import Tuple
 import pickle
@@ -13,70 +14,98 @@ class GeminiHandler:
         Args:
             verbose (int, optional): The amount it should print. Default is 1. (0 is none, 1 is only function calls, 2 is debugging)
             functions (callable): Any number of functions that Gemini can call.
-        """        
+        """
 
         try:
             # Retrieve configuration info from json files
             with open('config/config.json', 'r') as file:
                 info = json.load(file)
                 GEMINI_API_KEY = info["gemini_api_key"]
-                GEMINI_MODEL = info["gemini_model"]
+                GEMINI_MODEL_NAME = info["gemini_model"]
                 SAFETY_SETTINGS = info["safety_settings"]
                 self.MEMORY_PATH = info["memory_path"]
                 self.CONTINUE_CONVERSATION = info["continue_conversation"]
 
-                if verbose == None:
+                if verbose is None:
                     self.VERBOSE = info["verbose_level"]
                 else:
                     self.VERBOSE = verbose
-                
+            
             with open('config/ev3_config.json', 'r') as file:
-                info = json.load(file)
-                self.EMOTIONS = list(info["emotions"].keys())
+                ev3_info = json.load(file) 
+                self.EMOTIONS = list(ev3_info["emotions"].keys())
             
             # Retrieve prompts for the AI models
             with open('config/prompt.txt', 'r') as file:
-                BEHAVIOUR = file.read()
+                BEHAVIOUR_PROMPT = file.read()
             
             with open('config/vision_prompt.txt', 'r') as file:
-                VISION_BEHAVIOUR = file.read()
+                VISION_BEHAVIOUR_PROMPT = file.read()
 
+        # Catching FileNotFoundError to handle missing configuration files.
         except FileNotFoundError as e:
-            # Catching FileNotFoundError to handle missing configuration files.
-            # Expected behavior is to raise an exception and terminate the initialization.
             raise FileNotFoundError(f"[ERROR] [GEMINI] {e}. Please check if the config files exist in the correct location.")
-        
         except Exception as e:
             raise Exception(f"[ERROR] [GEMINI] {e}. Please check if the config files are correctly formatted.")
 
         # Replace [emotions] in the behaviour by the defined emotions in ev3_config if it is present in the prompt
-        BEHAVIOUR = BEHAVIOUR.replace("[emotions]", ", ".join(self.EMOTIONS))
+        BEHAVIOUR_PROMPT = BEHAVIOUR_PROMPT.replace("[emotions]", ", ".join(self.EMOTIONS))
+
+        # Set API Key and model name
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
+        self.gemini_model_name = GEMINI_MODEL_NAME
 
         # Create a list of all callable tools by gemini
-        tools = list(functions)
-        tools.append(self.get_scene_description)
-
-        # Set API Key
-        genai.configure(api_key=GEMINI_API_KEY)
-
-        # Create gemini instance for Dave
-        self.DAVE_MODEL = genai.GenerativeModel(model_name=GEMINI_MODEL,
-                                system_instruction=BEHAVIOUR,
-                                safety_settings=SAFETY_SETTINGS,
-                                tools=tools,
-                                tool_config={'function_calling_config':'AUTO'})
+        self.tools_list = list(functions)
+        self.tools_list.append(self.get_scene_description)
         
-        # Create gemini instance for vision functionality
-        self.VISION_MODEL = genai.GenerativeModel(model_name=GEMINI_MODEL,
-                                system_instruction=VISION_BEHAVIOUR,
-                                safety_settings=SAFETY_SETTINGS)
+        # Parse safety settings from JSON into SDK objects
+        self.parsed_safety_settings = None
+        if SAFETY_SETTINGS:
+            try:
+                self.parsed_safety_settings = [
+                    types.SafetySetting(category=s['category'], threshold=s['threshold'])
+                    for s in SAFETY_SETTINGS
+                ]
+            except KeyError as e:
+                raise ValueError(f"Invalid safety_settings format in JSON. Missing key: {e}")
+            except Exception as e:
+                raise ValueError(f"Error parsing safety_settings from JSON into SafetySetting objects: {e}")
 
-        # Create chat instance
+        # Create GenerationConfig for the main chat
+        try:
+            self.dave_generation_config = types.GenerateContentConfig(
+                system_instruction=BEHAVIOUR_PROMPT,
+                safety_settings=self.parsed_safety_settings,
+                tools=self.tools_list
+            )
+
+        # Handle potential errors in the response
+        except Exception as e:
+            if self.VERBOSE > 0:
+                print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Failed to create dave_generation_config: {e}")
+            raise
+
+        # Create GenerationConfig for vision model
+        try:
+            self.vision_config = types.GenerateContentConfig(
+                system_instruction=VISION_BEHAVIOUR_PROMPT, 
+                safety_settings=self.parsed_safety_settings
+            )
+        
+        # Handle potential errors in the response
+        except Exception as e:
+            if self.VERBOSE > 0:
+                print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Failed to create vision_config: {e}")
+            raise 
+
+        # Create the Gemini chat instance
+        self.CHAT = None 
         self.create_chat()
         
         # Debug
         if self.VERBOSE == 2:
-            print("[DEBUG] [GEMINI] Setup complete.")
+            print("[DEBUG] [GEMINI] Setup complete. Generation configs created.")
 
     def create_chat(self):
         """
@@ -94,26 +123,30 @@ class GeminiHandler:
         if self.CONTINUE_CONVERSATION:
 
             # Debug
-            if self.VERBOSE == 2:
-                print("[DEBUG] [GEMINI] Loading memory...")
-
+            if self.VERBOSE == 2: print("[DEBUG] [GEMINI] Loading memory...")
+            
             # Retrieve previous chat history from the memory file, deserialized with pickle
             try:
                 with open(self.MEMORY_PATH, 'rb') as file:
                     history = pickle.load(file)
-            except FileNotFoundError as e:
-                if self.VERBOSE > 0:
-                    print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] {e}. Starting fresh. (Check if the memory file exists)")
-            
+                    if not isinstance(history, list):
+                        if self.VERBOSE > 0: print(f"\033[1;33;40m[WARNING]\033[0m [GEMINI] Loaded history is not a list. Starting fresh.")
+                        history = []
+            except FileNotFoundError:
+                if self.VERBOSE > 0: print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Memory file {self.MEMORY_PATH} not found. Starting fresh.")
+                history = []
+            except Exception as e:
+                if self.VERBOSE > 0: print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Error loading memory: {e}. Starting fresh.")
+                history = []
         
         # Debug
-        if self.VERBOSE == 2:
-            print("[DEBUG] [GEMINI] Creating chat...")
+        if self.VERBOSE == 2: print("[DEBUG] [GEMINI] Creating chat...")
 
         # Create the chat
-        self.CHAT = self.DAVE_MODEL.start_chat(
+        self.CHAT = self.client.chats.create(
+            model=self.gemini_model_name,
             history=history,
-            enable_automatic_function_calling=True
+            config=self.dave_generation_config
         )
             
     def get_chat_response(self, prompt: str, img: object) -> Tuple[str, str]:
@@ -127,49 +160,73 @@ class GeminiHandler:
             img (PIL.Image): An image portraying what Gemini currently sees.
 
         Returns:
-            str: The response from Gemini.
+            Tuple[str, str]: The response text from Gemini and the determined emotion.
         """
-        
-        self.img = img
+        self.img = img 
         
         # Debug
         if self.VERBOSE == 2:
-            print("[DEBUG] [GEMINI] Getting response with prompt: " + prompt)
+            print(f"[DEBUG] [GEMINI] Getting response with prompt: {prompt}")
+
+        # Check if the chat is initialized
+        if not self.CHAT:
+             if self.VERBOSE > 0: print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Chat is not initialized. Call create_chat() first.")
+             return "Error: Chat not initialized.", choice(self.EMOTIONS)
 
         # Get a response from the AI model
-        response = self.CHAT.send_message(prompt)
-        text_response = str(response.text).strip()
+        response_obj = self.CHAT.send_message(message=prompt)
         
+        # Check if the response object is valid and extract the text
+        try:
+            text_response = str(response_obj.text).strip()
+        except AttributeError:
+            if self.VERBOSE > 0: print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Response object lacks 'text' attribute. Full response: {response_obj}")
+            return "Error: Could not get text from response.", choice(self.EMOTIONS)
+        except Exception as e:
+            if self.VERBOSE > 0: print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Error processing response.text: {e}")
+            return "Error: Could not process response.", choice(self.EMOTIONS)
+
         # Debug
         if self.VERBOSE == 2:
-            print("[DEBUG] [GEMINI] Response: " + text_response)
+            print(f"[DEBUG] [GEMINI] Raw response text: {text_response}")
 
-        # Filter out abnormal characters and replace enters with spaces
-        text_response = re.sub('[^\x20-\x7E]', '', text_response.replace('\n', ' ')).strip()
+        # Filter the text response to remove non-ASCII characters and replace newlines with spaces
+        text_response_filtered = re.sub(r'[^\x20-\x7E]', '', text_response.replace('\n', ' ')).strip()
 
-        # Splitting the emotion from the response
-        prompt_words = text_response.split(maxsplit=1)
+        # Split the emotion from the response text
+        prompt_words = text_response_filtered.split(maxsplit=1)
+        processed_response_text = ""
+        emotion = ""
 
-        # Only keep the letters for the emotion and make them lowercase
-        prompt_words[0] = re.sub('[^a-zA-Z]+', '', prompt_words[0]).lower().strip()
-
-        # Check if there is an emotion and if it is valid
-        if prompt_words[0] in self.EMOTIONS and len(prompt_words) > 1:
-            emotion = prompt_words[0]
-            response = prompt_words[1]
+        # Check if there are any words in the prompt
+        if prompt_words:
+            # Only keep the letters for the emotion and make them lowercase
+            potential_emotion = re.sub(r'[^a-zA-Z]+', '', prompt_words[0]).lower().strip()
+            
+            # If the potential emotion is in the list of known emotions, use it
+            if potential_emotion in self.EMOTIONS and len(prompt_words) > 1:
+                emotion = potential_emotion
+                processed_response_text = prompt_words[1]
+            
+            # If the potential emotion is not valid, pick a random emotion
+            else:
+                emotion = choice(self.EMOTIONS)
+                processed_response_text = text_response_filtered
         
-        # Pick a random emotion if it is invalid
+        # If the prompt was empty or only contained an invalid emotion, pick a random emotion
         else:
             emotion = choice(self.EMOTIONS)
-            response = text_response
-        
+
+            # Keep filtered text even if empty
+            processed_response_text = text_response_filtered
+
         # Debug
         if self.VERBOSE == 2:
             print(f"[DEBUG] [GEMINI] Filtered emotion : {emotion}")
-            print(f"[DEBUG] [GEMINI] Filtered response: {response}")
+            print(f"[DEBUG] [GEMINI] Filtered response: {processed_response_text}")
 
-        # Return the response and emotion
-        return response, emotion
+        # Return the response text and the emotion
+        return processed_response_text, emotion
 
     def get_scene_description(self, prompt: str) -> str:
         """
@@ -191,25 +248,44 @@ class GeminiHandler:
 
         # Debug
         if self.VERBOSE > 0:
-            print("| Called the vision function with:", prompt)
-            if self.VERBOSE == 2:
-                print("[DEBUG] [GEMINI] Evaluating scene...")
+            print(f"| Called the vision function with: {prompt}")
+        if self.VERBOSE == 2:
+            print("[DEBUG] [GEMINI] Evaluating scene...")
 
+        # Check if the image is available
+        if not hasattr(self, 'img') or self.img is None:
+            if self.VERBOSE > 0:
+                print("\033[1;33;40m[WARNING]\033[0m [GEMINI] Vision function called (get_scene_description) but no image (self.img) is available.")
+            return "Eyes were closed. Please try again."
+
+        # Prepare the contents for the vision model
+        contents_for_vision = [prompt, self.img] 
+        
         # Use the vision model to get a description of the scene
         try:
-            response = self.VISION_MODEL.generate_content([self.img, prompt])
+            response = self.client.models.generate_content(
+                model=self.gemini_model_name,
+                contents=contents_for_vision,
+                config=self.vision_config
+            )
             scene_description = response.text.strip()
-        except Exception as e:
-            scene_description = "Eyes were closed. Please try again."
 
+        # Handle potential errors in the response
+        except AttributeError as e:
+             if self.VERBOSE > 0:
+                print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Vision error (AttributeError, possibly bad image type for API or response structure): {e}.")
+             scene_description = "Eyes were closed. Please try again."
+        except Exception as e:
             if self.VERBOSE > 0:
-                print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] {e}.")
+                print(f"\033[1;31;40m[ERROR]\033[0m [GEMINI] Vision API error: {e}.")
+            scene_description = "Eyes were closed. Please try again."
 
         # Debug
         if self.VERBOSE == 2:
             if scene_description != "Eyes were closed. Please try again.":
                 print(f"[DEBUG] [GEMINI] Scene description: {scene_description}")
-
+        
+        # Return the scene description
         return scene_description
 
     def save_memory(self):
@@ -223,7 +299,7 @@ class GeminiHandler:
 
         # Write the history in the file, serialized with pickle
         with open(self.MEMORY_PATH, 'wb') as file:
-            pickle.dump(self.CHAT.history, file, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.CHAT.get_history(), file, protocol=pickle.HIGHEST_PROTOCOL)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """
