@@ -6,6 +6,10 @@ This is the code for my AI Lego robotic head, as seen on my YouTube channel (inc
   <a href="https://www.youtube.com/playlist?list=PLe3o60ftnUstYUnu4vxVhjR4WHe4jSx-d"><img src="https://img.youtube.com/vi/MghrMAWsfi8/0.jpg" alt="AI LEGO HEAD PLAYLIST"></a>
 </div>
 
+If you enjoy what I do and would like to support future creations, consider [buying me a coffee](https://buymeacoffee.com/creativemindstorms)!
+
+Every contribution helps fund new machines and videos on YouTube!
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Features](#features)
