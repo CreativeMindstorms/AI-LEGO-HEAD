@@ -22,7 +22,7 @@
     "mirror_hands": true,
 
     "gemini_api_key": "YOUR KEY",
-    "gemini_model": "gemini-2.5-flash",
+    "gemini_model": "gemini-flash-latest",
 
     "pico_api_key": "YOUR KEY",
     "pico_keyword_path_hey_dave": "externalFiles/hey-Dave_en_windows_v3_0_0.ppn",
@@ -75,3 +75,4 @@
         }
     ]
 }
+
