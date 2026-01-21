@@ -77,7 +77,8 @@ class GeminiHandler:
             self.dave_generation_config = types.GenerateContentConfig(
                 system_instruction=BEHAVIOUR_PROMPT,
                 safety_settings=self.parsed_safety_settings,
-                tools=self.tools_list
+                tools=self.tools_list,
+                thinking_config=types.ThinkingConfig(thinking_level="minimal")
             )
 
         # Handle potential errors in the response
